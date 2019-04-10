@@ -44,6 +44,10 @@ class SummarizerInterface(Frame):
             print("-" * 22)
             print("Summarizing article...")
             print("-" * 22)
+
+            file = open("article.txt", "w")
+            file.write(userInput)
+            file.close()
         else:
             print("\nPlease choose an article that is 150 words or less.\n")
 

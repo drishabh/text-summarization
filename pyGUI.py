@@ -1,6 +1,8 @@
 from tkinter import *
 from tkinter import scrolledtext
 from tkinter import messagebox
+from newspaper import *
+import nltk
 
 '''
 SummarizerInterface class creates an interactive user interface that takes in an article from a
@@ -15,17 +17,24 @@ class SummarizerInterface(Frame):
 
     ## Defines and implements all the widgets used in the interface.
     def createWidgets(self):
-        self.textBox = scrolledtext.ScrolledText(self,width=40,height=10,
-                                                 padx=5,pady=5)
-        self.textBox.grid(column=0,row=0,padx=10,pady=10)
+        self.lbl = Label(self,text="Enter an article URL below:")
+        self.lbl.grid(column=0,row=0)
+        
+        self.url = Entry(self,width=40)
+        self.url.grid(column=0,row=1)
+
+        self.urlSubmit = Button(self,text='Submit URL',command=self.manageURL)
+        self.urlSubmit.grid(column=0,row=2,pady=10)
+        
+        self.textBox = scrolledtext.ScrolledText(self,width=40,height=10,padx=5,pady=5)
+        self.textBox.grid(column=0,row=3,padx=10,pady=10)
         self.textBox.insert(INSERT,'Paste an article here...')
 
-        self.submitButton = Button(self,text='Summarize Article',
-                                   command=self.manageInput)
-        self.submitButton.grid()
+        self.submitButton = Button(self,text='Summarize Article',command=self.manageInput)
+        self.submitButton.grid(column=0,row=4)
 
         self.quitButton = Button(self,text='Quit',command=self.quit)
-        self.quitButton.grid(pady=20)
+        self.quitButton.grid(column=0,row=5,pady=20)
 
 
     ## Performs a check to see if the user is ready to quit after hitting the 'quit' button.
@@ -40,7 +49,7 @@ class SummarizerInterface(Frame):
     def manageInput(self):
         userInput = self.textBox.get('1.0', END)
 
-        if self.verifyLength(userInput) == True:
+        if self.verifyLength(150, userInput) == True:
             print("-" * 22)
             print("Summarizing article...")
             print("-" * 22)
@@ -48,17 +57,35 @@ class SummarizerInterface(Frame):
             file = open("article.txt", "w")
             file.write(userInput)
             file.close()
-        else:
-            print("\nPlease choose an article that is 150 words or less.\n")
 
+    ## Passes content from URL textbox to articleContent function
+    def manageURL(self):
+        userURL = self.url.get()
+        articleTitle,articleText = self.articleContent(userURL)
+
+        self.textBox.delete('1.0', END)
+        self.textBox.insert(INSERT, articleText)
 
     ## Returns true if a string contains 150 words or less.
-    def verifyLength(self, text):
+    def verifyLength(self, length, text):
         textString = text.split()
+        num = int(length)
 
-        if len(textString) > 150:
+        if len(textString) > num:
+            lengthWarning = messagebox.askokcancel(title="Article too long!",
+                                                   message="Please provide an article that is 150 words or less.")
+            self.textBox.delete('1.0', END)
             return False
         return True
+
+    ## Returns article content from a URL
+    def articleContent(self, url):
+        newsArticle = Article(url, language="en")
+        newsArticle.download()
+        newsArticle.parse()
+        newsArticle.nlp()
+        return(newsArticle.title, newsArticle.text)
+
 
 GUI = SummarizerInterface()
 GUI.master.title("Text Summarization Tool")
